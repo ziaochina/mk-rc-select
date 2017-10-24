@@ -1196,7 +1196,7 @@ var _initialiseProps = function _initialiseProps() {
           return _this2.topCtrlNode = node;
         } },
       _this2.getPlaceholderElement(),
-      innerNode
+      innerNodes
     );
   };
 };

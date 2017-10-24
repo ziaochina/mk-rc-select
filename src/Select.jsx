@@ -1116,7 +1116,7 @@ export default class Select extends React.Component {
     return (
       <div className={className} ref={node => (this.topCtrlNode = node)}>
         {this.getPlaceholderElement()}
-        {innerNode}
+        {innerNodes}
       </div>
     );
   };
