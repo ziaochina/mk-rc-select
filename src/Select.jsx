@@ -1107,6 +1107,12 @@ export default class Select extends React.Component {
         );
       }
     }
+
+    const innerNodes = [innerNode];
+    if (this.props.suffix) {
+      innerNodes.push(this.props.suffix);
+    }
+
     return (
       <div className={className} ref={node => (this.topCtrlNode = node)}>
         {this.getPlaceholderElement()}
