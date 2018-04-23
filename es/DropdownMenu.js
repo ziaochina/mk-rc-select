@@ -164,12 +164,20 @@ var DropdownMenu = function (_React$Component) {
       var renderMenu = this.renderMenu();
 
       var children = renderMenu;
-      if (this.props.dropdownFooter) {
+      if (this.props.dropdownFooter && this.props.dropdownHeader) {
+        children = [this.props.dropdownHeader, renderMenu, React.createElement(
+          'div',
+          { onClick: this.handleFooterClick.bind(this) },
+          this.props.dropdownFooter
+        )];
+      } else if (this.props.dropdownFooter) {
         children = [renderMenu, React.createElement(
           'div',
           { onClick: this.handleFooterClick.bind(this) },
           this.props.dropdownFooter
         )];
+      } else if (this.props.dropdownHeader) {
+        children = [this.props.dropdownHeader, renderMenu];
       }
 
       return renderMenu ? React.createElement(
@@ -201,6 +209,7 @@ DropdownMenu.propTypes = {
   visible: PropTypes.bool,
   enableHideDropdownByClick: PropTypes.bool,
   dropdownFooter: PropTypes.any,
+  dropdownHeader: PropTypes.any,
   onPopupVisibleChange: PropTypes.func
 };
 export default DropdownMenu;

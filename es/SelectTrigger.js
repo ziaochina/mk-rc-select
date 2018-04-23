@@ -76,6 +76,7 @@ var SelectTrigger = function (_React$Component) {
         defaultActiveFirstOption: props.defaultActiveFirstOption,
         dropdownMenuStyle: props.dropdownMenuStyle,
         dropdownFooter: props.dropdownFooter,
+        dropdownHeader: props.dropdownHeader,
         enableHideDropdownByClick: props.enableHideDropdownByClick,
         onPopupVisibleChange: props.onDropdownVisibleChange
       }));
@@ -186,7 +187,8 @@ SelectTrigger.propTypes = {
   prefixCls: PropTypes.string,
   popupClassName: PropTypes.string,
   children: PropTypes.any,
-  dropdownFooter: PropTypes.any
+  dropdownFooter: PropTypes.any,
+  dropdownHeader: PropTypes.any
 };
 export default SelectTrigger;
 

@@ -1190,6 +1190,7 @@ export default class Select extends React.Component {
         onMenuDeselect={this.onMenuDeselect}
         ref="trigger"
         dropdownFooter={props.dropdownFooter}
+        dropdownHeader={props.dropdownHeader}
         enableHideDropdownByClick={props.enableHideDropdownByClick}
       >
         <div

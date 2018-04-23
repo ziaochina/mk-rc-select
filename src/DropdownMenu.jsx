@@ -21,6 +21,7 @@ export default class DropdownMenu extends React.Component {
     visible: PropTypes.bool,
     enableHideDropdownByClick: PropTypes.bool,
     dropdownFooter: PropTypes.any,
+    dropdownHeader:PropTypes.any,
     onPopupVisibleChange: PropTypes.func,
   };
 
@@ -172,10 +173,20 @@ export default class DropdownMenu extends React.Component {
     const renderMenu = this.renderMenu();
 
     let children = renderMenu;
-    if (this.props.dropdownFooter) {
+    if (this.props.dropdownFooter && this.props.dropdownHeader) {
+      children = [
+        this.props.dropdownHeader
+      ,renderMenu, (<div onClick={::this.handleFooterClick} >
+        {this.props.dropdownFooter}
+      </div>)];
+    }
+    else if (this.props.dropdownFooter) {
       children = [renderMenu, (<div onClick={::this.handleFooterClick} >
         {this.props.dropdownFooter}
       </div>)];
+    }
+    else if(this.props.dropdownHeader){
+      children = [this.props.dropdownHeader,renderMenu];
     }
 
     return renderMenu ? (

@@ -44,6 +44,7 @@ export default class SelectTrigger extends React.Component {
     popupClassName: PropTypes.string,
     children: PropTypes.any,
     dropdownFooter: PropTypes.any,
+    dropdownHeader: PropTypes.any
   };
 
   state = {
@@ -90,6 +91,7 @@ export default class SelectTrigger extends React.Component {
         defaultActiveFirstOption={props.defaultActiveFirstOption}
         dropdownMenuStyle={props.dropdownMenuStyle}
         dropdownFooter={props.dropdownFooter}
+        dropdownHeader={props.dropdownHeader}
         enableHideDropdownByClick={props.enableHideDropdownByClick}
         onPopupVisibleChange={props.onDropdownVisibleChange}
       />

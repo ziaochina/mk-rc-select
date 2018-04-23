@@ -180,6 +180,7 @@ var Select = function (_React$Component) {
           onMenuDeselect: this.onMenuDeselect,
           ref: 'trigger',
           dropdownFooter: props.dropdownFooter,
+          dropdownHeader: props.dropdownHeader,
           enableHideDropdownByClick: props.enableHideDropdownByClick
         },
         React.createElement(
