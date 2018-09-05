@@ -4,30 +4,39 @@ import PropTypes from 'prop-types';
 import toArray from 'rc-util/lib/Children/toArray';
 import Menu from 'rc-menu';
 import scrollIntoView from 'dom-scroll-into-view';
-import { getSelectKeys, preventDefaultEvent } from './util';
+import raf from 'raf';
+import { getSelectKeys, preventDefaultEvent, saveRef } from './util';
 
 export default class DropdownMenu extends React.Component {
+  static displayName = 'DropdownMenu';
   static propTypes = {
     defaultActiveFirstOption: PropTypes.bool,
     value: PropTypes.any,
     dropdownMenuStyle: PropTypes.object,
     multiple: PropTypes.bool,
     onPopupFocus: PropTypes.func,
+    onPopupScroll: PropTypes.func,
     onMenuDeSelect: PropTypes.func,
     onMenuSelect: PropTypes.func,
     prefixCls: PropTypes.string,
     menuItems: PropTypes.any,
     inputValue: PropTypes.string,
     visible: PropTypes.bool,
+    firstActiveValue: PropTypes.string,
     enableHideDropdownByClick: PropTypes.bool,
     dropdownFooter: PropTypes.any,
     dropdownHeader:PropTypes.any,
     onPopupVisibleChange: PropTypes.func,
   };
-
-  componentWillMount() {
-    this.lastInputValue = this.props.inputValue;
+  
+  
+  constructor(props) {
+    super(props);
+    this.lastInputValue = props.inputValue;
+    this.saveMenuRef = saveRef(this, 'menuRef');
   }
+
+
 
   componentDidMount() {
     this.scrollActiveItemToView();
@@ -39,7 +48,7 @@ export default class DropdownMenu extends React.Component {
       this.lastVisible = false;
     }
     // freeze when hide
-    return nextProps.visible;
+    return nextProps.visible || nextProps.inputValue !== this.props.inputValue;
   }
 
   componentDidUpdate(prevProps) {
@@ -51,28 +60,38 @@ export default class DropdownMenu extends React.Component {
     this.lastInputValue = props.inputValue;
   }
 
+  componentWillUnmount() {
+    if (this.rafInstance && this.rafInstance.cancel) {
+      this.rafInstance.cancel();
+    }
+  }
+
   scrollActiveItemToView = () => {
     // scroll into view
     const itemComponent = findDOMNode(this.firstActiveItem);
-    const props = this.props;
+    const { value, visible, firstActiveValue } = this.props;
 
-    if (itemComponent) {
-      const scrollIntoViewOpts = {
-        onlyScrollIfNeeded: true,
-      };
-      if (
-        (!props.value || props.value.length === 0) &&
-        props.firstActiveValue
-      ) {
-        scrollIntoViewOpts.alignWithTop = true;
-      }
+    if (!itemComponent || !visible) {
+      return;
+    }
+    const scrollIntoViewOpts = {
+      onlyScrollIfNeeded: true,
+    };
+    if (
+      (!value || value.length === 0) && firstActiveValue
+    ) {
+      scrollIntoViewOpts.alignWithTop = true;
+    }
 
+    // Delay to scroll since current frame item position is not ready when pre view is by filter
+    // https://github.com/ant-design/ant-design/issues/11268#issuecomment-406634462
+    this.rafInstance = raf(() => {
       scrollIntoView(
         itemComponent,
-        findDOMNode(this.refs.menu),
+        findDOMNode(this.menuRef),
         scrollIntoViewOpts
       );
-    }
+    });
   };
 
   handleFooterClick() {
@@ -96,6 +115,7 @@ export default class DropdownMenu extends React.Component {
       onMenuSelect,
       inputValue,
       firstActiveValue,
+      backfillValue,
     } = props;
     if (menuItems && menuItems.length) {
       const menuProps = {};
@@ -141,22 +161,27 @@ export default class DropdownMenu extends React.Component {
           }
           return clone(item);
         });
+      } else {
+        // Clear firstActiveItem when dropdown menu items was empty
+        // Avoid `Unable to find node on an unmounted component`
+        // https://github.com/ant-design/ant-design/issues/10774
+        this.firstActiveItem = null;
       }
 
       // clear activeKey when inputValue change
       const lastValue = value && value[value.length - 1];
-      if (inputValue !== this.lastInputValue && (!lastValue || !lastValue.backfill)) {
+      if (inputValue !== this.lastInputValue && (!lastValue || lastValue !== backfillValue)) {
         activeKeyProps.activeKey = '';
       }
 
       return (
         <Menu
-          ref="menu"
+          ref={this.saveMenuRef}
           style={this.props.dropdownMenuStyle}
           defaultActiveFirst={defaultActiveFirstOption}
+          role="listbox"
           {...activeKeyProps}
           multiple={multiple}
-          focusable={false}
           {...menuProps}
           selectedKeys={selectedKeys}
           prefixCls={`${prefixCls}-menu`}
@@ -191,14 +216,16 @@ export default class DropdownMenu extends React.Component {
 
     return renderMenu ? (
       <div
-        style={{ overflow: 'auto' }}
+        style={{
+          overflow: 'auto',
+          transform: 'translateZ(0)',
+        }}
         onFocus={this.props.onPopupFocus}
         onMouseDown={preventDefaultEvent}
+        onScroll={this.props.onPopupScroll}
       >
         {children}
       </div>
     ) : null;
   }
 }
-
-DropdownMenu.displayName = 'DropdownMenu';

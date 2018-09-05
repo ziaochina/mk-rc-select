@@ -1,3 +1,5 @@
+'use strict';
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
@@ -9,44 +11,54 @@ exports.spaces = spaces;
 exports.indent = indent;
 exports.debugNode = debugNode;
 exports.debugNodes = debugNodes;
-exports.debugInst = debugInst;
-exports.debugInsts = debugInsts;
 
-var _without = require('lodash/without');
+var _lodash = require('lodash.escape');
 
-var _without2 = _interopRequireDefault(_without);
-
-var _escape = require('lodash/escape');
-
-var _escape2 = _interopRequireDefault(_escape);
-
-var _compact = require('lodash/compact');
-
-var _compact2 = _interopRequireDefault(_compact);
-
-var _object = require('object.values');
-
-var _object2 = _interopRequireDefault(_object);
+var _lodash2 = _interopRequireDefault(_lodash);
 
 var _functionPrototype = require('function.prototype.name');
 
 var _functionPrototype2 = _interopRequireDefault(_functionPrototype);
 
-var _ShallowTraversal = require('./ShallowTraversal');
+var _isString = require('is-string');
 
-var _MountedTraversal = require('./MountedTraversal');
+var _isString2 = _interopRequireDefault(_isString);
 
-var _reactCompat = require('./react-compat');
+var _isNumberObject = require('is-number-object');
 
-var _Utils = require('./Utils');
+var _isNumberObject2 = _interopRequireDefault(_isNumberObject);
 
-var _version = require('./version');
+var _isCallable = require('is-callable');
+
+var _isCallable2 = _interopRequireDefault(_isCallable);
+
+var _isBooleanObject = require('is-boolean-object');
+
+var _isBooleanObject2 = _interopRequireDefault(_isBooleanObject);
+
+var _objectInspect = require('object-inspect');
+
+var _objectInspect2 = _interopRequireDefault(_objectInspect);
+
+var _has = require('has');
+
+var _has2 = _interopRequireDefault(_has);
+
+var _RSTTraversal = require('./RSTTraversal');
+
+var _getAdapter = require('./getAdapter');
+
+var _getAdapter2 = _interopRequireDefault(_getAdapter);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+var booleanValue = Function.bind.call(Function.call, Boolean.prototype.valueOf);
 
 function typeName(node) {
+  var adapter = (0, _getAdapter2['default'])();
+  if (adapter.displayNameOfNode) {
+    return (0, _getAdapter2['default'])().displayNameOfNode(node) || 'Component';
+  }
   return typeof node.type === 'function' ? node.type.displayName || (0, _functionPrototype2['default'])(node.type) || 'Component' : node.type;
 }
 
@@ -60,27 +72,36 @@ function indent(depth, string) {
   }).join('\n');
 }
 
-function propString(prop) {
-  switch (typeof prop === 'undefined' ? 'undefined' : _typeof(prop)) {
-    case 'function':
-      return '{[Function]}';
-    case 'string':
-      return '"' + String(prop) + '"';
-    case 'number':
-    case 'boolean':
-      return '{' + String(prop) + '}';
-    case 'object':
-      return '{{...}}';
-    default:
-      return '{[' + (typeof prop === 'undefined' ? 'undefined' : _typeof(prop)) + ']}';
+function propString(prop, options) {
+  if ((0, _isString2['default'])(prop)) {
+    return (0, _objectInspect2['default'])(String(prop), { quoteStyle: 'double' });
   }
+  if ((0, _isNumberObject2['default'])(prop)) {
+    return '{' + String((0, _objectInspect2['default'])(Number(prop))) + '}';
+  }
+  if ((0, _isBooleanObject2['default'])(prop)) {
+    return '{' + String((0, _objectInspect2['default'])(booleanValue(prop))) + '}';
+  }
+  if ((0, _isCallable2['default'])(prop)) {
+    return '{' + String((0, _objectInspect2['default'])(prop)) + '}';
+  }
+  if ((typeof prop === 'undefined' ? 'undefined' : _typeof(prop)) === 'object') {
+    if (options.verbose) {
+      return '{' + String((0, _objectInspect2['default'])(prop)) + '}';
+    }
+
+    return '{{...}}';
+  }
+  return '{[' + (typeof prop === 'undefined' ? 'undefined' : _typeof(prop)) + ']}';
 }
 
-function propsString(node) {
-  var props = (0, _Utils.propsOfNode)(node);
-  var keys = (0, _without2['default'])(Object.keys(props), 'children');
+function propsString(node, options) {
+  var props = (0, _RSTTraversal.propsOfNode)(node);
+  var keys = Object.keys(props).filter(function (x) {
+    return x !== 'children';
+  });
   return keys.map(function (key) {
-    return String(key) + '=' + String(propString(props[key]));
+    return String(key) + '=' + String(propString(props[key], options));
   }).join(' ');
 }
 
@@ -90,19 +111,32 @@ function indentChildren(childrenStrs, indentLength) {
   }).join('\n')) + '\n' : '';
 }
 
+function isRSTNodeLike(node) {
+  return (0, _has2['default'])(node, 'nodeType') && typeof node.nodeType === 'string' && (0, _has2['default'])(node, 'type') && (0, _has2['default'])(node, 'key') && (0, _has2['default'])(node, 'ref') && (0, _has2['default'])(node, 'instance') && (0, _has2['default'])(node, 'rendered');
+}
+
 function debugNode(node) {
   var indentLength = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 2;
   var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-  if (typeof node === 'string' || typeof node === 'number') return (0, _escape2['default'])(node);
+  if (typeof node === 'string' || typeof node === 'number') return (0, _lodash2['default'])(node);
+  if (typeof node === 'function') {
+    var name = (0, _functionPrototype2['default'])(node);
+    return '[function' + (name ? ' ' + String(name) : '') + ']';
+  }
   if (!node) return '';
 
-  var childrenStrs = (0, _compact2['default'])((0, _ShallowTraversal.childrenOfNode)(node).map(function (n) {
+  var adapter = (0, _getAdapter2['default'])();
+  if (!adapter.isValidElement(node) && !isRSTNodeLike(node)) {
+    return '{' + String((0, _objectInspect2['default'])(node)) + '}';
+  }
+
+  var childrenStrs = (0, _RSTTraversal.childrenOfNode)(node).map(function (n) {
     return debugNode(n, indentLength, options);
-  }));
+  }).filter(Boolean);
   var type = typeName(node);
 
-  var props = options.ignoreProps ? '' : propsString(node);
+  var props = options.ignoreProps ? '' : propsString(node, options);
   var beforeProps = props ? ' ' : '';
   var afterProps = childrenStrs.length ? '>' : ' ';
   var childrenIndented = indentChildren(childrenStrs, indentLength);
@@ -115,62 +149,5 @@ function debugNodes(nodes) {
 
   return nodes.map(function (node) {
     return debugNode(node, undefined, options);
-  }).join('\n\n\n');
-}
-
-function debugInst(inst) {
-  var indentLength = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 2;
-  var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
-  if (typeof inst === 'string' || typeof inst === 'number') return (0, _escape2['default'])(inst);
-  if (!inst) return '';
-
-  if (inst._stringText) {
-    return inst._stringText;
-  }
-
-  if (!inst.getPublicInstance) {
-    var internal = (0, _Utils.internalInstance)(inst);
-    return debugInst(internal, indentLength, options);
-  }
-  var publicInst = inst.getPublicInstance();
-
-  if (typeof publicInst === 'string' || typeof publicInst === 'number') return (0, _escape2['default'])(publicInst);
-  if (!publicInst && !inst._renderedComponent) return '';
-
-  // do stuff with publicInst
-  var currentElement = inst._currentElement;
-  var type = typeName(currentElement);
-  var props = options.ignoreProps ? '' : propsString(currentElement);
-  var children = [];
-  if ((0, _reactCompat.isDOMComponent)(publicInst)) {
-    var renderedChildren = (0, _MountedTraversal.renderedChildrenOfInst)(inst);
-    if (!renderedChildren) {
-      children.push.apply(children, _toConsumableArray((0, _ShallowTraversal.childrenOfNode)(currentElement)));
-    } else {
-      children.push.apply(children, _toConsumableArray((0, _object2['default'])(renderedChildren)));
-    }
-  } else if (!_version.REACT013 && (0, _reactCompat.isElement)(currentElement) && typeof currentElement.type === 'function') {
-    children.push(inst._renderedComponent);
-  } else if (_version.REACT013 && (0, _reactCompat.isCompositeComponent)(publicInst)) {
-    children.push(inst._renderedComponent);
-  }
-
-  var childrenStrs = (0, _compact2['default'])(children.map(function (n) {
-    return debugInst(n, indentLength, options);
-  }));
-
-  var beforeProps = props ? ' ' : '';
-  var nodeClose = childrenStrs.length ? '</' + String(type) + '>' : '/>';
-  var afterProps = childrenStrs.length ? '>' : ' ';
-  var childrenIndented = indentChildren(childrenStrs, indentLength);
-  return '<' + String(type) + beforeProps + String(props) + afterProps + String(childrenIndented) + nodeClose;
-}
-
-function debugInsts(insts) {
-  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-  return insts.map(function (inst) {
-    return debugInst(inst, undefined, options);
   }).join('\n\n\n');
 }

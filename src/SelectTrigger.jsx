@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import DropdownMenu from './DropdownMenu';
 import ReactDOM from 'react-dom';
-import { isSingleMode } from './util';
+import { isSingleMode, saveRef } from './util';
 
 Trigger.displayName = 'Trigger';
 
@@ -30,6 +30,7 @@ const BUILT_IN_PLACEMENTS = {
 export default class SelectTrigger extends React.Component {
   static propTypes = {
     onPopupFocus: PropTypes.func,
+    onPopupScroll: PropTypes.func,
     dropdownMatchSelectWidth: PropTypes.bool,
     dropdownAlign: PropTypes.object,
     visible: PropTypes.bool,
@@ -43,12 +44,20 @@ export default class SelectTrigger extends React.Component {
     prefixCls: PropTypes.string,
     popupClassName: PropTypes.string,
     children: PropTypes.any,
+    showAction: PropTypes.arrayOf(PropTypes.string),
     dropdownFooter: PropTypes.any,
     dropdownHeader: PropTypes.any
   };
 
-  state = {
-    dropdownWidth: null,
+  constructor(props) {
+    super(props);
+
+    this.saveDropdownMenuRef = saveRef(this, 'dropdownMenuRef');
+    this.saveTriggerRef = saveRef(this, 'triggerRef');
+
+    this.state = {
+      dropdownWidth: null,
+    };
   }
 
   componentDidMount() {
@@ -60,33 +69,35 @@ export default class SelectTrigger extends React.Component {
   }
 
   setDropdownWidth = () => {
-    const { visible } = this.props;
-    if (visible) {
-      const width = ReactDOM.findDOMNode(this).offsetWidth;
-      if (width !== this.state.dropdownWidth) {
-        this.setState({ dropdownWidth: width });
-      }
+    if (!this.props.dropdownMatchSelectWidth) {
+      return;
+    }
+    const width = ReactDOM.findDOMNode(this).offsetWidth;
+    if (width !== this.state.dropdownWidth) {
+      this.setState({ dropdownWidth: width });
     }
   }
 
   getInnerMenu = () => {
-    return this.popupMenu && this.popupMenu.refs.menu;
+    return this.dropdownMenuRef && this.dropdownMenuRef.menuRef;
   };
 
   getPopupDOMNode = () => {
-    return this.refs.trigger.getPopupDomNode();
+    return this.triggerRef.getPopupDomNode();
   };
 
   getDropdownElement = newProps => {
     const props = this.props;
     return (
       <DropdownMenu
-        ref={this.saveMenu}
+        ref={this.saveDropdownMenuRef}
         {...newProps}
         prefixCls={this.getDropdownPrefixCls()}
         onMenuSelect={props.onMenuSelect}
         onMenuDeselect={props.onMenuDeselect}
+        onPopupScroll={props.onPopupScroll}
         value={props.value}
+        backfillValue={props.backfillValue}
         firstActiveValue={props.firstActiveValue}
         defaultActiveFirstOption={props.defaultActiveFirstOption}
         dropdownMenuStyle={props.dropdownMenuStyle}
@@ -109,10 +120,6 @@ export default class SelectTrigger extends React.Component {
 
   getDropdownPrefixCls = () => {
     return `${this.props.prefixCls}-dropdown`;
-  };
-
-  saveMenu = menu => {
-    this.popupMenu = menu;
   };
 
   render() {
@@ -157,9 +164,9 @@ export default class SelectTrigger extends React.Component {
     return (
       <Trigger
         {...props}
-        showAction={disabled ? [] : ['click']}
+        showAction={disabled ? [] : this.props.showAction}
         hideAction={hideAction}
-        ref="trigger"
+        ref={this.saveTriggerRef}
         popupPlacement="bottomLeft"
         builtinPlacements={BUILT_IN_PLACEMENTS}
         prefixCls={dropdownPrefixCls}
