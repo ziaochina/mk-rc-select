@@ -1187,7 +1187,7 @@ class Select extends React.Component {
                   }}
                   className={`${prefixCls}-selection__choice__remove`}
                 >{removeIcon ||
-                <i className={`${prefixCls}-selection__choice__remove-icon`}>×</i>}</span>)}
+                <i className={`${prefixCls}-selection__choice__remove-icon`}>ï¿½</i>}</span>)}
             </li>
           );
         });
@@ -1241,7 +1241,7 @@ class Select extends React.Component {
         style={UNSELECTABLE_STYLE}
         {...UNSELECTABLE_ATTRIBUTE}
         onClick={this.onClearSelection}
-      >{clearIcon || <i className={`${prefixCls}-selection__clear-icon`}>×</i>}</span>
+      >{clearIcon || <i className={`${prefixCls}-selection__clear-icon`}>Ã—</i>}</span>
     );
     if (!allowClear) {
       return null;

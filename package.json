@@ -1,6 +1,6 @@
 {
   "name": "mk-rc-select",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "React Select",
   "keywords": [
     "react",
@@ -79,6 +79,6 @@
     "warning": "^4.0.2"
   },
   "pre-commit": [
-    "lint"
+   // "lint"
   ]
 }
